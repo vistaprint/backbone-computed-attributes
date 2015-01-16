@@ -19,7 +19,7 @@ _.extend(MyModel.prototype, Backbone.ComputedAttributeMixin);
 There are then two ways of binding computed attributes:
 
 
-### Via the `this.createComputedAttribute()` function arguments
+### Via `createComputedAttribute` function arguments
 ```javascript
  var MyModel = Backbone.Model.extend({
 
@@ -37,7 +37,7 @@ There are then two ways of binding computed attributes:
  });
 ```
 
-### Via a `computed` hash and calling `this.createComputedAttributes()` without parameters
+### Via `computed` hash and calling `createComputedAttribute`
 ```javascript
 var Rectangle = Backbone.Model.extend({
 
