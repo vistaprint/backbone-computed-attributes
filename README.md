@@ -90,7 +90,7 @@ Where the property area will be recomputed every time the width or height is upd
 
 If you want to make multiple changes to backing properties before a computed attribute is recalculated the `Backbone.atomic` function can be used to batch those changes.  
 
-For example, in the case above, changing height and then width one after the other would cause `area` to be re-computed twice (and in turn, all handlers listening to `area` would also be fired twice). This could have large performace implications depending on the structure of your application.
+For example, in the case above, changing height and then width one after the other would cause `area` to be re-computed twice (and in turn, all handlers listening to `area` would also be fired twice). This could have large performance implications depending on the structure of your application.
 
 ```javascript
 Backbone.atomic(function() {
@@ -101,7 +101,7 @@ Backbone.atomic(function() {
 
 ### Circular references
 
-Currently this Mixin has no protection against circular references, so be sure to attempt to avoid these cases.
+Currently this mixin has no protection against circular references, so be sure to attempt to avoid these cases.
 
 ### Binding 
 You are not restricted to a single model binding or to binding only to the current Model.  Multiple models can be passed in as an array and any model that can be accessed from the computing models context can be used.
