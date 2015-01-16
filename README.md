@@ -1,23 +1,25 @@
 # Backbone Computed Attributes Mixin
-===========================================
 
-This allows you to set an attribute to have a function value and then use get to retrieve the evaluated function result, rather than just the function. You cannot specify a computed setter. 
+This mixin allows you to create composite attribute for standard Backbone models.    
 
-When one of the bindings changes, a change event will automatically be triggered for this property when the value changes. Generally, the cached value of the getter
-will be returned, unless the `nocache` option is specified.
+Specifying a getter allows computing an attribute value based on multiple bindings to other attributes across contexts.  This allows an attribute to have a function value and then use get to retrieve the evaluated function result, instead of evaluating the function when requested. You cannot specify a computed setter. 
 
-Destroying this model will remove all of its bindings.
+When a change is triggered on any of the specified bindings, the value will be recomputed and cached unless the `nocache` attribute is set to true in the definition of the computed attribute.
+
+Destroying a model using computed attributes will cause all computed attribute bindings to be removed.
 
 ## Usage
-------------------
-Add the mixin to your models prototype to make it available
+
+You can add the mixin to an individual model prototype to make it available:
 
 ```javascript
 _.extend(MyModel.prototype, Backbone.ComputedAttributeMixin);
 ```
 
-Then define your own attributes one at a time at initialization
+There are then two ways of binding computed attributes:
 
+
+### Via the `this.createComputedAttribute()` function arguments
 ```javascript
  var MyModel = Backbone.Model.extend({
 
@@ -35,8 +37,7 @@ Then define your own attributes one at a time at initialization
  });
 ```
 
-Or, add the attributes to the computed hash and simply call this.createComputedAttributes() on initialization
-
+### Via a `computed` hash and calling `this.createComputedAttributes()` without parameters
 ```javascript
 var Rectangle = Backbone.Model.extend({
 
@@ -47,6 +48,7 @@ var Rectangle = Backbone.Model.extend({
     computed: {
         "area" : {
             bindings: function() {
+				// bind to the properties `height` and `width` on self
                 return [{ model: this, attributes: ["height", "width"] }];
             },
             get: function() {
@@ -59,7 +61,8 @@ var Rectangle = Backbone.Model.extend({
         },
         "perimeter" : {
             bindings: function() {
-                return [{ model: this, attributes: ["height", "width"] }];
+				// alternate syntax to binding to self
+                return ["height", "width"];
             },
             get: function() {
                 if (this.get("width") && this.get("height")) {
@@ -73,22 +76,21 @@ var Rectangle = Backbone.Model.extend({
 });
 ```
 
-
-Then all you need to do is call 
+If `this.createComputedAttributes()` is called in `initialize` the computed attributes will be immediately available through the `get` method of Backbone.Model:
 ```javascript
 var rectangle = new Rectangle({width: 5, height, 10});
 rectangle.get("area");
 ```
-Every time the width or height is updated the result will be cached and calling get will return the cached result until the next time width or height is changed and the area is recomputed
 
+Where the property area will be recomputed every time the width or height is updated and the new result will be cached.
 
-## Tips
-------------------
-Sometimes you may run into the case where you need to make multiple changes to a models attributes and computed attributes are bound to many of those. This may cause a handler to fire on the change of a computed attribute before all your changes were made. We can use the atomic function to get around this.
+## Advanced Usage
 
-For example if we want to change both the width and height as seen above and we have a listener to changes on the area - the listener will get triggered twice - once when the width changes and again when the height changes. 
+### `Backbone.atomic` to batch changes
 
-To avoid this we can defer the triggering of any computed attribute changes using this atomic function. Just wrap any calls you want to make in a function passes to Backbone.atomic and you are all set.
+If you want to make multiple changes to backing properties before a computed attribute is recalculated the `Backbone.atomic` function can be used to batch those changes.  
+
+For example, in the case above, changing height and then width one after the other would cause `area` to be re-computed twice (and in turn, all handlers listening to `area` would also be fired twice). This could have large performace implications depending on the structure of your application.
 
 ```javascript
 Backbone.atomic(function() {
@@ -97,12 +99,28 @@ Backbone.atomic(function() {
 });
 ```
 
-You don't need to bind the attributes to the same model. You can also bind them to children of the model if you would like. See unit tests for examples.
+### Circular references
 
+Currently this Mixin has no protection against circular references, so be sure to attempt to avoid these cases.
 
+### Binding 
+You are not restricted to a single model binding or to binding only to the current Model.  Multiple models can be passed in as an array and any model that can be accessed from the computing models context can be used.
+
+```javascript
+	this.createComputedAttribute({
+			attr: "Z",
+			get: function()
+			{
+				return this.get("X") + this.get("Y");
+			},
+			bindings:
+				[{ model: this, attribute: "X" },
+				 { model: this.parent, attribute: "Y"}]
+		});
+```
 
 ## Origin
-------------------
+
 Backbone Computed Attributes was written at [Vistaprint](http://www.vistaprint.com).
 
 Vistaprint empowers more than 15 million micro businesses and consumers annually with affordable, professional options to make an impression. With a unique business model supported by proprietary technologies, high-volume production facilities, and direct marketing expertise, Vistaprint offers a wide variety of products and services that micro businesses can use to expand their business. A global company, Vistaprint employs over 4,100 people, operates more than 25 localized websites globally and ships to more than 130 countries around the world. Vistaprint's broad range of products and services are easy to access online, 24 hours a day at www.vistaprint.com.
