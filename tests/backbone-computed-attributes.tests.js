@@ -1,31 +1,41 @@
-﻿$(document).ready(function()
-{
-    module("Backbone.ComputedAttributeMixin");
+﻿var _ = require("underscore");
+var assert = require("assert");
+var Backbone = require("backbone");
+var ComputedAttributeMixin = require("../backbone.computed.js");
 
-    // Basic Tests.
-
-    var TestModel = Backbone.Model.extend({
-
-        initialize: function()
-        {
-            this.createComputedAttribute({
-                attr: "Z",
-                get: function()
-                {
-                    return this.get("X") + this.get("Y");
-                },
-                bindings:
-                    [{ model: this, attribute: "X" },
-                     { model: this, attribute: "Y"}]
-            });
+suite("Backbone computed attributes", function() {
+  suite("Basic Tests", function() {
+    var TestModel;
+    setup(function() {
+      TestModel = Backbone.Model.extend({
+        initialize: function() {
+          this.createComputedAttribute({
+            attr: "Z",
+            get: function() {
+              return this.get("X") + this.get("Y");
+            },
+            bindings: [
+              { model: this, attribute: "X" },
+              { model: this, attribute: "Y" }
+            ]
+          });
         },
-
         defaults: {
-            "X": 1,
-            "Y": 2
+          "X": 1,
+          "Y": 2
         }
+      });
+      _.extend(TestModel.prototype, ComputedAttributeMixin);
     });
-    _.extend(TestModel.prototype, Backbone.ComputedAttributeMixin);
+
+    test("initialize and get computed attribute", function() {
+      var test = new TestModel();
+      assert.equal(test.get("Z"), 3);
+    });
+  });
+});
+
+/*
 
     test("initialize and get computed attribute", 1, function()
     {
@@ -478,3 +488,5 @@
     });
 
 });
+
+*/
