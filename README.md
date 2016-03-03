@@ -119,6 +119,12 @@ You are not restricted to a single model binding or to binding only to the curre
 		});
 ```
 
+### Test
+```javascript
+npm install
+npm run test
+```
+
 ## Origin
 
 Backbone Computed Attributes was written at [Vistaprint](http://www.vistaprint.com).
