@@ -1,0 +1,26 @@
+{
+  "name": "backbone-computed-attributes",
+  "version": "1.0.0",
+  "description": "This mixin allows you to create composite attribute for standard Backbone models.",
+  "main": "src/backbone-computed-attributes.js",
+  "scripts": {
+    "test": "mocha tests"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vistaprint/backbone-computed-attributes.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/vistaprint/backbone-computed-attributes/issues"
+  },
+  "homepage": "https://github.com/vistaprint/backbone-computed-attributes#readme",
+  "dependencies": {
+    "backbone": "^1.2.3",
+    "underscore": "^1.8.3"
+  },
+  "devDependencies": {
+    "mocha": "^2.4.5"
+  }
+}

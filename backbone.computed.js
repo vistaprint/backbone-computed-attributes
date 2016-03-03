@@ -26,16 +26,27 @@
 //                 });
 //         }
 //     });
-(function(root, factory) {
+(function(factory) {
+
+    // Establish the root object, `window` (`self`) in the browser, or `global` on the server.
+    // We use `self` instead of `window` for `WebWorker` support.
+    var root = (typeof self == "object" && self.self == self && self) ||
+              (typeof global == "object" && global.global == global && global);
+
+    // Set up Backbone appropriately for the environment. Start with AMD.
     if (typeof define === "function" && define.amd) {
-        // AMD. Register as an anonymous module.
-        define(["underscore", "backbone"], function(_, Backbone) {
-            return factory(root,  _, Backbone);
-        });
-    } else {
-        factory(root,  _, Backbone);
-    }
-}(this, function(root, _, Backbone) {
+      define(["underscore", "backbone", "exports"], function(_, Backbone, exports) {
+        return factory(root, Backbone, exports);
+      });
+
+    // Next for Node.js or CommonJS. jQuery may not be needed as a module.
+    } else if (typeof exports !== "undefined") {
+      var _ = require("underscore");
+      var Backbone = require("backbone");
+      factory(root, exports, _, Backbone);
+    } 
+
+}(function(root, BackboneComputedAttributeMixin, _, Backbone) {
     var _computedChangeQueue = [];
     var _atomic = false;
 
@@ -131,7 +142,7 @@
         _flushComputedChangeQueue();
     };
 
-    Backbone.ComputedAttributeMixin = {
+    BackboneComputedAttributeMixin = {
         
         _changeDependency: function(attr) {
             if (!_.contains(_computedChangeQueue, this)) {
