@@ -4,7 +4,8 @@
   "description": "This mixin allows you to create composite attribute for standard Backbone models.",
   "main": "src/backbone-computed-attributes.js",
   "scripts": {
-    "test": "./node_modules/.bin/mocha -u tdd tests"
+    "test": "./node_modules/.bin/mocha -u tdd tests",
+    "cover": "./node_modules/.bin/istanbul cover ./node_modules/.bin/mocha -- -R spec -u tdd tests"
   },
   "repository": {
     "type": "git",
@@ -21,6 +22,7 @@
     "underscore": "^1.8.3"
   },
   "devDependencies": {
+    "istanbul": "^0.4.2",
     "mocha": "^2.4.5"
   }
 }
