@@ -247,6 +247,11 @@
             var binding = options.bindings[i];
             var attrs, model;
 
+            // If a collection was passed in, createComputedAttributes for each of its models
+            if (binding.collection) {
+                this.createComputedAttributeForCollection(binding, options);
+                return;
+            }
             if (_.isString(binding)) {
                 attrs = [binding];
                 model = this;
@@ -299,6 +304,51 @@
             this._computed = {};
         }
         this._computed[computedAttr] = { get: options.get, bindings: options.bindings, nocache: options.nocache };
+    };
+
+    BackboneComputedAttributeMixin.createComputedAttributeForCollection =  function(binding, options) {
+        var addBindings = _.bind(function(newModels) {
+            newBindings = _.map(newModels, function(model){
+                return {
+                    attributes: binding.attribute ? [binding.attribute] : binding.attributes, // Only accept binding.attributes/attribute
+                    model: model
+                };
+            });
+
+            this.createComputedAttribute({
+                attr: options.attr,
+                get: options.get,
+                bindings: newBindings,
+                nocache: options.nocache
+            });
+        }, this);
+
+        // When the viewModel is first initialized add bindings to all of the viewModels
+        addBindings(binding.collection.models);
+        
+        // When a collection is reset, add bindings for all of the new models added
+        // and recompute the attribute
+        binding.collection.on("reset", _.bind(function(collection, opt){
+            var newModels = _.difference(collection.models, opt.previousModels);
+            addBindings(newModels);
+            this._changeDependency(options.attr);
+            _flushComputedChangeQueue();
+        }, this));
+
+        // When a model is added, attach bindings to the it and recompute the attribute
+        binding.collection.on("add", _.bind(function(newModel) {
+            addBindings([newModel]);
+            this._changeDependency(options.attr);
+            _flushComputedChangeQueue();
+        }, this));
+
+        // When a model is removed, recompute the attribute
+        binding.collection.on("remove", _.bind(function(model){
+            this._changeDependency(options.attr);
+            _flushComputedChangeQueue();
+        }, this))
+
+        return;
     };
 
     // When a model is destroyed, we can use its list of dependencies to find all of the other
