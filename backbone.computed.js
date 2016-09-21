@@ -36,7 +36,7 @@
     // Set up Backbone appropriately for the environment. Start with AMD.
     if (typeof define === "function" && define.amd) {
       define(["underscore", "backbone", "exports"], function(_, Backbone, exports) {
-        return factory(root, Backbone, exports);
+        return factory(root, exports, _, Backbone);
       });
 
     // Next for Node.js or CommonJS. jQuery may not be needed as a module.
@@ -373,6 +373,6 @@
         }, this);
     };
 
+    Backbone.ComputedAttributeMixin = BackboneComputedAttributeMixin;
     return BackboneComputedAttributeMixin;
-
 }));
