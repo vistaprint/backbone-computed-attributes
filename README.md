@@ -132,7 +132,7 @@ You also have the ability to bind to a collection. Instead of binding to attribu
 				});
 			},
 			bindings:
-				[{ collection: this.get("childModels", attribute: "height" },
+				[{ collection: this.get("childModels"), attribute: "height" },
 		});
 ```
 
