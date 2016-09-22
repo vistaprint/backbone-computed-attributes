@@ -78,6 +78,178 @@ suite("Backbone computed attributes", function() {
     });
   });
 
+  suite("Binding to collections", function() {
+    var TestModel;
+    setup(function() {
+      TestModel = Backbone.Model.extend({
+        initialize: function() {
+          this.createComputedAttribute({
+            attr: "NumChildrenWithHeightOf5",
+            get: function() {
+              return this.get("items").where({"height": 5}).length;
+            },
+            bindings: [
+              { collection: this.get("items"), attribute: "height" }
+            ]
+          });
+          this.createComputedAttribute({
+            attr: "NumChildrenWithAreaOf10",
+            get: function() {
+              return this.get("items").filter(function(model) { 
+                return model.get("height") * model.get("width") === 10;
+              }).length;
+            },
+            bindings: [
+              { collection: this.get("items"), attributes: ["height", "width"] }
+            ]
+          });
+        }
+      });
+      _.extend(TestModel.prototype, ComputedAttributeMixin);
+    });
+
+    test("initialize and get computed attribute", function() {
+      var test = new TestModel({items: new Backbone.Collection()});
+      assert.equal(test.get("NumChildrenWithHeightOf5"), 0);
+    });
+
+    test("computed attribute works when bound to a collection", function() {
+      var test = new TestModel({items: new Backbone.Collection(
+        [
+          new Backbone.Model({ height: 5 }), 
+          new Backbone.Model({ height: 2 })
+        ])});
+      assert.equal(test.get("NumChildrenWithHeightOf5"), 1);
+    });
+
+    test("bind to computed attribute on a collection works when item is added", function() {
+      var counter = 0;
+      var test = new TestModel({items: new Backbone.Collection()});
+      test.on("change:NumChildrenWithHeightOf5", function() { counter++; });
+      test.get("items").add(new Backbone.Model({ height: 5 }));
+      assert.equal(counter, 1);
+      assert.equal(test.get("NumChildrenWithHeightOf5"), 1);
+    });
+
+    test("computed attribute does not fire multiple change events when dependencies are changed within an atomic block", function() {
+      var counter = 0;
+      var test = new TestModel({items: new Backbone.Collection()});
+      test.on("change:NumChildrenWithHeightOf5", function() { counter++; });
+      Backbone.atomic(function() {
+          test.get("items").add(new Backbone.Model({ height: 5 }));
+          test.get("items").add(new Backbone.Model({ height: 23 }));
+          test.get("items").add(new Backbone.Model({ height: 5 }));
+          test.get("items").add(new Backbone.Model({ height: 12 }));
+      });
+      assert.equal(test.get("NumChildrenWithHeightOf5"), 2);
+      assert.equal(counter, 1);
+    });
+
+    test("computed attribute does not fire change event when dependency is set to an unchanged value", function() {
+      var counter = 0;
+      var test = new TestModel({items: new Backbone.Collection()});
+      test.on("change:NumChildrenWithHeightOf5", function() { counter++; });
+      test.get("items").add(new Backbone.Model({ height: 5 }));
+      assert.equal(counter, 1);
+      test.get("items").first().set("height", 5);
+      assert.equal(counter, 1);
+    });
+
+    test("computed attribute does not fire change event when dependencies are changed but computed value remains the same", function() {
+      var counter = 0;
+      var test = new TestModel({items: new Backbone.Collection()});
+      test.get("items").add(new Backbone.Model({ height: 5 }));
+      test.on("change:NumChildrenWithHeightOf5", function() { counter++; });
+      test.get("items").add(new Backbone.Model({ height: 7 }));
+      assert.equal(test.get("NumChildrenWithHeightOf5"), 1);
+      assert.equal(counter, 0);
+    });
+
+    test("when resetting an collection that is a dependency make sure a change event is fired if the computed value changed", function() {
+      var counter = 0;
+      var test = new TestModel({items: new Backbone.Collection(
+        [
+          new Backbone.Model({ height: 5 }), 
+          new Backbone.Model({ height: 1 })
+        ])});
+      assert.equal(test.get("NumChildrenWithHeightOf5"), 1);
+      test.on("change:NumChildrenWithHeightOf5", function() { counter++; });
+      test.get("items").reset(
+        [
+          new Backbone.Model({ height: 5 }), 
+          new Backbone.Model({ height: 5 }), 
+          new Backbone.Model({ height: 23 }), 
+          new Backbone.Model({ height: 5 })
+        ]);
+      assert.equal(test.get("NumChildrenWithHeightOf5"), 3);
+      assert.equal(counter, 1);
+    });
+
+    test("when resetting an collection that is a dependency make sure a change event is not fired if the computed value has not changed", function() {
+      var counter = 0;
+      var test = new TestModel({items: new Backbone.Collection(
+        [
+          new Backbone.Model({ height: 5 }), 
+          new Backbone.Model({ height: 2 })
+        ])});
+      assert.equal(test.get("NumChildrenWithHeightOf5"), 1);
+      test.on("change:NumChildrenWithHeightOf5", function() { counter++; });
+      test.get("items").reset(
+        [
+          new Backbone.Model({ height: 5 }), 
+          new Backbone.Model({ height: 2 }), 
+          new Backbone.Model({ height: 3 }), 
+          new Backbone.Model({ height: 6 })
+        ]);
+      assert.equal(test.get("NumChildrenWithHeightOf5"), 1);
+      assert.equal(counter, 0);
+    });
+
+    test("when removing an element from a collection that is a dependency  make sure a change event is fired if the computed value changed", function() {
+      var counter = 0;
+      var test = new TestModel({items: new Backbone.Collection(
+        [
+          new Backbone.Model({ height: 5 }), 
+          new Backbone.Model({ height: 5 })
+        ])});
+      assert.equal(test.get("NumChildrenWithHeightOf5"), 2);
+      test.on("change:NumChildrenWithHeightOf5", function() { counter++; });
+      test.get("items").remove(test.get("items").first());
+      assert.equal(test.get("NumChildrenWithHeightOf5"), 1);
+      assert.equal(counter, 1);
+    });
+
+    test("when removing an element from a collection that is a dependency make sure a change event is not fired if the computed value has not changed", function() {
+      var counter = 0;
+      var test = new TestModel({items: new Backbone.Collection(
+        [
+          new Backbone.Model({ height: 1 }), 
+          new Backbone.Model({ height: 5 })
+        ])});
+      assert.equal(test.get("NumChildrenWithHeightOf5"), 1);
+      test.on("change:NumChildrenWithHeightOf5", function() { counter++; });
+      test.get("items").remove(test.get("items").first());
+      assert.equal(test.get("NumChildrenWithHeightOf5"), 1);
+      assert.equal(counter, 0);
+    });
+
+      test("computed attribute bound to multiple child attributes works correctly", function() {
+      var counter = 0;
+      var test = new TestModel({items: new Backbone.Collection(
+        [
+          new Backbone.Model({ height: 2, width: 5 }), 
+          new Backbone.Model({ height: 5, width: 5 }),
+          new Backbone.Model({ height: 10, width: 1 }),
+          new Backbone.Model({ height: 23, width: 12 })
+        ])});
+      assert.equal(test.get("NumChildrenWithAreaOf10"), 2);
+      test.on("change:NumChildrenWithAreaOf10", function() { counter++; });
+      test.get("items").first().set("height", 100);
+      assert.equal(test.get("NumChildrenWithAreaOf10"), 1);
+      assert.equal(counter, 1);
+    });
+  });
+
   suite("Tests that bind to different models", function() {
     var ModelWithDependencies;
     setup(function() {
