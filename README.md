@@ -136,6 +136,10 @@ You also have the ability to bind to a collection. Instead of binding to attribu
 		});
 ```
 
+In the example above, when the attribute 'height' is changed on any of the the childModels, the tallestChild computed attribute is recalculated.
+
+You can also take in an array of attributes to bind to  on the children by using 'attributes: ["height", "width"]' in your bindings
+
 ### Test
 ```javascript
 npm install
