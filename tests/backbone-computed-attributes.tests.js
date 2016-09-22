@@ -92,6 +92,17 @@ suite("Backbone computed attributes", function() {
               { collection: this.get("items"), attribute: "height" }
             ]
           });
+          this.createComputedAttribute({
+            attr: "NumChildrenWithAreaOf10",
+            get: function() {
+              return this.get("items").filter(function(model) { 
+                return model.get("height") * model.get("width") === 10;
+              }).length;
+            },
+            bindings: [
+              { collection: this.get("items"), attributes: ["height", "width"] }
+            ]
+          });
         }
       });
       _.extend(TestModel.prototype, ComputedAttributeMixin);
@@ -220,6 +231,22 @@ suite("Backbone computed attributes", function() {
       test.get("items").remove(test.get("items").first());
       assert.equal(test.get("NumChildrenWithHeightOf5"), 1);
       assert.equal(counter, 0);
+    });
+
+      test("computed attribute bound to multiple child attributes works correctly", function() {
+      var counter = 0;
+      var test = new TestModel({items: new Backbone.Collection(
+        [
+          new Backbone.Model({ height: 2, width: 5 }), 
+          new Backbone.Model({ height: 5, width: 5 }),
+          new Backbone.Model({ height: 10, width: 1 }),
+          new Backbone.Model({ height: 23, width: 12 })
+        ])});
+      assert.equal(test.get("NumChildrenWithAreaOf10"), 2);
+      test.on("change:NumChildrenWithAreaOf10", function() { counter++; });
+      test.get("items").first().set("height", 100);
+      assert.equal(test.get("NumChildrenWithAreaOf10"), 1);
+      assert.equal(counter, 1);
     });
   });
 
