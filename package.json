@@ -1,6 +1,6 @@
 {
   "name": "backbone-computed-attributes",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "This mixin allows you to create composite attribute for standard Backbone models.",
   "main": "src/backbone-computed-attributes.js",
   "scripts": {
