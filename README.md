@@ -119,6 +119,27 @@ You are not restricted to a single model binding or to binding only to the curre
 		});
 ```
 
+### Binding to collections
+You also have the ability to bind to a collection. Instead of binding to attribute changes on a model you can bind to attribute changes on all the models of a collection. This will also handle the cases for when models are added to and removed from the collection or the collection is reset
+
+```javascript
+	this.createComputedAttribute({
+			attr: "tallestChild",
+			get: function()
+			{
+				return this.get("childModels").max(function(child) {
+					return child.get("height");
+				});
+			},
+			bindings:
+				[{ collection: this.get("childModels"), attribute: "height" },
+		});
+```
+
+In the example above, when the attribute 'height' is changed on any of the the childModels, the tallestChild computed attribute is recalculated.
+
+You can also take in an array of attributes to bind to  on the children by using 'attributes: ["height", "width"]' in your bindings
+
 ### Test
 ```javascript
 npm install
