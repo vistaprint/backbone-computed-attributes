@@ -136,7 +136,7 @@
         _atomic = true;
         try {
             fn.apply(context || this);
-        } catch(e) {
+        } catch (e) {
             throw e;
         // Don't leave the application in atomic mode, just because the function failed.
         } finally {
@@ -169,7 +169,6 @@
             }
         }
     };
-
 
     // Override `get` so that we call the computed function for this attribute.
     BackboneComputedAttributeMixin.get = function(attr) {

@@ -4,6 +4,7 @@
   "description": "This mixin allows you to create composite attribute for standard Backbone models.",
   "main": "src/backbone-computed-attributes.js",
   "scripts": {
+    "lint": "./node_modules/.bin/eslint backbone.computed.js",
     "test": "./node_modules/.bin/mocha -u tdd tests",
     "cover": "./node_modules/.bin/istanbul cover ./node_modules/.bin/mocha -- -R spec -u tdd tests"
   },
@@ -22,6 +23,9 @@
     "underscore": "^1.8.3"
   },
   "devDependencies": {
+    "eslint": "^3.7.1",
+    "eslint-plugin-backbone": "^2.0.2",
+    "eslint-plugin-react": "^6.4.1",
     "istanbul": "^0.4.2",
     "mocha": "^2.4.5"
   }
