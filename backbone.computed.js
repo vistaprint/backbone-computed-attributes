@@ -1,7 +1,7 @@
 // **ComputedAttributeMixin**
 
 // This allows you to set an attribute to have a function value and then use
-// get to retrieve the evaluated function result, rather than just the function. You 
+// get to retrieve the evaluated function result, rather than just the function. You
 // cannot specify a computed setter.
 
 // When one of the bindings changes, a change event will automatically be triggered
@@ -13,7 +13,6 @@
 // Usage:
 
 //     var MyModel = Backbone.Model.extend({
-//  
 //         initialize : function() {
 //             this.createComputedAttribute({
 //                     attr: "...",
@@ -27,6 +26,8 @@
 //         }
 //     });
 (function(factory) {
+    // Mark these variables as globals so eslint won't yell about them:
+    /* global global, exports, _, Backbone */
 
     // Establish the root object, `window` (`self`) in the browser, or `global` on the server.
     // We use `self` instead of `window` for `WebWorker` support.
@@ -35,10 +36,13 @@
 
     // Set up Backbone appropriately for the environment. Start with AMD.
     if (typeof define === "function" && define.amd) {
-      define(["underscore", "backbone", "exports"], function(_, Backbone, exports) {
-        return factory(root, exports, _, Backbone);
-      });
-
+        define([
+            "underscore",
+            "backbone",
+            "exports"
+        ], function(_, Backbone, exports) {
+            return factory(root, exports, _, Backbone);
+        });
     // Next for Node.js or CommonJS. jQuery may not be needed as a module.
     } else if (typeof exports !== "undefined") {
       factory(root, exports, require("underscore"), require("backbone"));
@@ -48,6 +52,42 @@
 }(function(root, BackboneComputedAttributeMixin, _, Backbone) {
     var _computedChangeQueue = [];
     var _atomic = false;
+
+    var _flushComputedChangeQueue = function() {
+        if (_atomic) {
+            return;
+        }
+
+        // This is a while loop because in theory we could trigger a change event that causes
+        // another property to get set that will then push more models into the queue.
+        while (_computedChangeQueue.length) {
+            var model = _computedChangeQueue.pop();
+            var changed = false;
+            model.changed = {}; // TODO Circular test!
+            for (var computedAttr in model._changedComputedAttributes) {
+                var oldVal = model._changedComputedAttributes[computedAttr];
+                delete model._changedComputedAttributes[computedAttr];
+                var newVal = model.get(computedAttr);
+                if (newVal !== oldVal) {
+
+                    //backbone resets the list of previous attributes after change to the static attributes, so let's keep our own list
+                    if (!model._previousComputedAttributes) {
+                        model._previousComputedAttributes = {};
+                    }
+
+                    model._previousComputedAttributes[computedAttr] = oldVal;
+                    model.changed[computedAttr] = newVal;
+                    model.trigger("change:" + computedAttr, model);
+                    changed = true;
+                }
+            }
+            if (changed) {
+                model.trigger("change", model);
+            }
+        }
+
+        _computedChangeQueue = [];
+    };
 
     // This one time setup method will override Backbone's setter. This is only called
     // once we're sure that computed properties are in use.
@@ -88,44 +128,8 @@
             return retValue;
         };
     });
-    
-    var _flushComputedChangeQueue = function() {
-        if (_atomic) {
-            return;
-        }
 
-        // This is a while loop because in theory we could trigger a change event that causes
-        // another property to get set that will then push more models into the queue.
-        while (_computedChangeQueue.length) {
-            var model = _computedChangeQueue.pop();
-            var changed = false;
-            model.changed = {}; // TODO Circular test!
-            for (var computedAttr in model._changedComputedAttributes) {
-                var oldVal = model._changedComputedAttributes[computedAttr];
-                delete model._changedComputedAttributes[computedAttr];
-                var newVal = model.get(computedAttr);
-                if (newVal !== oldVal) {
-                    
-                    //backbone resets the list of previous attributes after change to the static attributes, so let's keep our own list
-                    if (!model._previousComputedAttributes) {
-                        model._previousComputedAttributes = {};
-                    }
-                    
-                    model._previousComputedAttributes[computedAttr] = oldVal;
-                    model.changed[computedAttr] = newVal;
-                    model.trigger("change:" + computedAttr, model);
-                    changed = true;
-                }
-            }
-            if (changed) {
-                model.trigger("change", model);
-            }
-        }
-
-        _computedChangeQueue = [];
-    };
-
-    Backbone.atomic =  function(fn, context) { 
+    Backbone.atomic =  function(fn, context) {
         if (_atomic) {
             throw new Error("Computed attributes are already in atomic mode (they won't be updated until the first function that called this is complete).");
         }
@@ -145,11 +149,11 @@
         if (!_.contains(_computedChangeQueue, this)) {
             _computedChangeQueue.push(this);
         }
-        
+
         // Set a flag so that the value is recomputed next time get() is called.
         this._dirty[attr] = true;
-        
-        // We need to keep track of the current value of each attribute so that we know 
+
+        // We need to keep track of the current value of each attribute so that we know
         // whether or not to trigger change events once we enter the recomputing state.
         if (!this._changedComputedAttributes) {
             this._changedComputedAttributes = {};
@@ -179,20 +183,26 @@
         }
         return this.attributes[attr];
     };
-        
+
     BackboneComputedAttributeMixin.previous = function(attr) {
-        if (attr == null) return null;
+        if (attr == null) {
+            return null;
+        }
 
         var computed = this._computed && this._computed[attr];
         if (computed) {
-            if (!this._previousComputedAttributes) return null;
+            if (!this._previousComputedAttributes) {
+                return null;
+            }
             return this._previousComputedAttributes[attr];
         }
 
-        if (!this._previousAttributes) return null;
+        if (!this._previousAttributes) {
+            return null;
+        }
         return this._previousAttributes[attr];
     };
-        
+
     BackboneComputedAttributeMixin.previousAttributes = function () {
         if (!this._previousAttributes && !this._previousComputedAttributes) {
             return null;
@@ -229,7 +239,7 @@
 
     BackboneComputedAttributeMixin.createComputedAttribute = function(options) {
         setupComputedAttributes();
-        
+
         if (!this._dependencies) {
             this._dependencies = {};
             this._dirty = {};
@@ -254,20 +264,16 @@
             if (_.isString(binding)) {
                 attrs = [binding];
                 model = this;
-            }
-            else if (_.isArray(binding)) {
+            } else if (_.isArray(binding)) {
                 attrs = binding;
                 model = this;
-            }
-            else if (binding.attribute) {
+            } else if (binding.attribute) {
                 attrs = [binding.attribute];
                 model = binding.model || this;
-            }
-            else if (binding.attributes) {
+            } else if (binding.attributes) {
                 attrs = binding.attributes;
                 model = binding.model || this;
-            }
-            else {
+            } else {
                 throw new Error("Attribute binding not defined correctly");
             }
 
@@ -307,7 +313,7 @@
 
     BackboneComputedAttributeMixin.createComputedAttributeForCollection =  function(binding, options) {
         var addBindings = _.bind(function(newModels) {
-            newBindings = _.map(newModels, function(model){
+            var newBindings = _.map(newModels, function(model){
                 return {
                     attributes: binding.attribute ? [binding.attribute] : binding.attributes, // Only accept binding.attributes/attribute
                     model: model
@@ -324,7 +330,7 @@
 
         // When the viewModel is first initialized add bindings to all of the viewModels
         addBindings(binding.collection.models);
-        
+
         // When a collection is reset, add bindings for all of the new models added
         // and recompute the attribute
         binding.collection.on("reset", _.bind(function(collection, opt){
@@ -342,10 +348,10 @@
         }, this));
 
         // When a model is removed, recompute the attribute
-        binding.collection.on("remove", _.bind(function(model){
+        binding.collection.on("remove", _.bind(function(){
             this._changeDependency(options.attr);
             _flushComputedChangeQueue();
-        }, this))
+        }, this));
 
         return;
     };
