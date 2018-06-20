@@ -19,6 +19,16 @@ suite("Backbone computed attributes", function() {
               { model: this, attribute: "Y" }
             ]
           });
+          this.createComputedAttribute({
+            attr: "objZ",
+            get: function() {
+              return { "z": this.get("X") + this.get("Y") };
+            },
+            bindings: [
+              { model: this, attribute: "X" },
+              { model: this, attribute: "Y" }
+            ]
+          });
         },
         defaults: {
           "X": 1,
@@ -62,6 +72,15 @@ suite("Backbone computed attributes", function() {
       var test = new TestModel();
       test.get("Z"); // Caches it once. I don't know if this should happen first automatically.
       test.on("change:Z", function() { counter++; });
+      test.set({ X: 2, Y: 1 });
+      assert.equal(counter, 0);
+    });
+
+    test("computed attribute does not fire change event when dependencies are changed but computed value remains the same (even when the computed value is an object)", function() {
+      var counter = 0;
+      var test = new TestModel();
+      test.get("objZ"); // Caches it once. I don't know if this should happen first automatically.
+      test.on("change:objZ", function() { counter++; });
       test.set({ X: 2, Y: 1 });
       assert.equal(counter, 0);
     });

@@ -68,7 +68,7 @@
                 var oldVal = model._changedComputedAttributes[computedAttr];
                 delete model._changedComputedAttributes[computedAttr];
                 var newVal = model.get(computedAttr);
-                if (newVal !== oldVal) {
+                if (!_.isEqual(newVal, oldVal)) {
 
                     //backbone resets the list of previous attributes after change to the static attributes, so let's keep our own list
                     if (!model._previousComputedAttributes) {
