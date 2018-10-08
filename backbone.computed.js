@@ -210,8 +210,8 @@
         return _.extend(_.clone(this._previousAttributes) || {}, _.clone(this._previousComputedAttributes));
     };
 
-    BackboneComputedAttributeMixin.destroy = function() {
-        Backbone.Model.prototype.destroy.apply(this, arguments);
+    BackboneComputedAttributeMixin.destroy = function(model, collection, options) {
+        Backbone.Model.prototype.destroy.call(this, options);
         this.removeComputedAttributes();
     };
 
